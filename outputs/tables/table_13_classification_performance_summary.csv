@@ -1,0 +1,2 @@
+Table,Model,Target,Accuracy,Correct classifications,Total test records
+Table 13,Logistic Regression,Price Category: Low / Medium / High,0.902,37,41
