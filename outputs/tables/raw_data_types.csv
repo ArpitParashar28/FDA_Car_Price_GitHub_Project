@@ -1,0 +1,27 @@
+Column,Raw data type
+symboling,int64
+normalized-losses,str
+make,str
+fuel-type,str
+aspiration,str
+num-of-doors,str
+body-style,str
+drive-wheels,str
+engine-location,str
+wheel-base,float64
+length,float64
+width,float64
+height,float64
+curb-weight,int64
+engine-type,str
+num-of-cylinders,str
+engine-size,int64
+fuel-system,str
+bore,str
+stroke,str
+compression-ratio,float64
+horsepower,str
+peak-rpm,str
+city-mpg,int64
+highway-mpg,int64
+price,str

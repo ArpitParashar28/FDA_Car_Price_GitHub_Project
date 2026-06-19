@@ -1,0 +1,3 @@
+Model,CV mean R2,CV std R2,Fold scores
+Linear Regression,0.752,0.074,0.786; 0.779; 0.74; 0.836; 0.617
+Random Forest Regressor,0.857,0.066,0.929; 0.856; 0.896; 0.868; 0.735

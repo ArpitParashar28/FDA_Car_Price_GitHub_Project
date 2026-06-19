@@ -1,0 +1,5 @@
+Column,Q1,Q3,IQR,Lower cap,Upper cap,Outlier count
+price,7788.0,16500.0,8712.0,-5280.0,29568.0,14
+horsepower,70.0,116.0,46.0,1.0,185.0,6
+engine-size,97.0,141.0,44.0,31.0,207.0,10
+curb-weight,2145.0,2935.0,790.0,960.0,4120.0,0
