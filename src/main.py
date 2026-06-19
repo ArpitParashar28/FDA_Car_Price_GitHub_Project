@@ -37,6 +37,7 @@ from sklearn.metrics import (
     mean_squared_error,
     accuracy_score,
     confusion_matrix,
+    classification_report,
 )
 
 # SIMPLE SETTINGS - CHANGE ONLY THIS PART
@@ -49,14 +50,20 @@ RUN_MODELS = True
 
 # PROJECT PATHS
 
-BASE_DIR = Path(__file__).resolve().parents[1]
+# Works whether this file is saved as project_root/run.py or project_root/src/run.py
+CURRENT_FILE_DIR = Path(__file__).resolve().parent
+
+if (CURRENT_FILE_DIR / "data" / "auto.csv").exists():
+    BASE_DIR = CURRENT_FILE_DIR
+else:
+    BASE_DIR = CURRENT_FILE_DIR.parent
+
 DATA_PATH = BASE_DIR / "data" / "auto.csv"
 FIGURE_DIR = BASE_DIR / "outputs" / "figures"
 TABLE_DIR = BASE_DIR / "outputs" / "tables"
 
 FIGURE_DIR.mkdir(parents=True, exist_ok=True)
 TABLE_DIR.mkdir(parents=True, exist_ok=True)
-
 
 HEADERS = [
     "symboling", "normalized-losses", "make", "fuel-type", "aspiration",
@@ -530,21 +537,24 @@ def run_regression_and_classification(df: pd.DataFrame) -> None:
     print(cv_results.to_string(index=False))
 
     # Classification
+    # TASK 4: Convert price into Low, Medium and High categories
+    labels = ["Low", "Medium", "High"]
+
     df["price-category"] = pd.qcut(
         df["price"],
-        3,
-        labels=["Low", "Medium", "High"]
+        q=3,
+        labels=labels
     )
 
-    X_classification = df[features]
-    y_classification = df["price-category"]
+    X_class = df[features]
+    y_class = df["price-category"]
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X_classification,
-        y_classification,
+    X_train_class, X_test_class, y_train_class, y_test_class = train_test_split(
+        X_class,
+        y_class,
         test_size=0.20,
         random_state=42,
-        stratify=y_classification
+        stratify=y_class
     )
 
     classifier = Pipeline([
@@ -552,32 +562,82 @@ def run_regression_and_classification(df: pd.DataFrame) -> None:
         ("model", LogisticRegression(max_iter=1000))
     ])
 
-    classifier.fit(X_train, y_train)
-    class_predictions = classifier.predict(X_test)
+    classifier.fit(X_train_class, y_train_class)
+    y_pred_class = classifier.predict(X_test_class)
 
-    accuracy = accuracy_score(y_test, class_predictions)
+    classification_accuracy = accuracy_score(y_test_class, y_pred_class)
+    correct_predictions = int((y_test_class == y_pred_class).sum())
+    test_records = int(len(y_test_class))
 
+    print("\nTASK 4: Classification Model")
+    print("Logistic Regression Accuracy:", round(classification_accuracy, 3))
+    print(f"Correct classifications: {correct_predictions}/{test_records}")
+
+    print("\nClassification Report:")
+    print(classification_report(y_test_class, y_pred_class, labels=labels))
+
+    # Table 13: Classification Performance Summary
     classification_summary = pd.DataFrame([{
-        "Metric": "Accuracy",
-        "Value": round(accuracy, 3)
+        "Table": "Table 13",
+        "Model": "Logistic Regression",
+        "Target": "Price Category: Low / Medium / High",
+        "Accuracy": round(classification_accuracy, 3),
+        "Correct classifications": correct_predictions,
+        "Total test records": test_records
     }])
 
     classification_summary.to_csv(
-        TABLE_DIR / "classification_summary.csv",
+        TABLE_DIR / "table_13_classification_performance_summary.csv",
         index=False
     )
 
-    print("\nClassification accuracy:", round(accuracy, 3))
+    # Save detailed classification report for reproducibility
+    classification_report_df = pd.DataFrame(
+        classification_report(
+            y_test_class,
+            y_pred_class,
+            labels=labels,
+            output_dict=True
+        )
+    ).transpose()
 
-    # Confusion matrix
-    labels = ["Low", "Medium", "High"]
-    cm = confusion_matrix(y_test, class_predictions, labels=labels)
+    classification_report_df.to_csv(
+        TABLE_DIR / "classification_report.csv",
+        index=True
+    )
+
+    print("\nTable 13: Classification Performance Summary")
+    print(classification_summary.to_string(index=False))
+
+    # Confusion matrix for classification
+    cm = confusion_matrix(
+        y_test_class,
+        y_pred_class,
+        labels=labels
+    )
+
+    cm_df = pd.DataFrame(
+        cm,
+        index=[f"Actual {label}" for label in labels],
+        columns=[f"Predicted {label}" for label in labels]
+    )
+
+    cm_df.to_csv(
+        TABLE_DIR / "classification_confusion_matrix.csv",
+        index=True
+    )
+
+    print("\nConfusion Matrix:")
+    print(cm_df.to_string())
 
     plt.figure(figsize=(6, 5))
     im = plt.imshow(cm, aspect="auto", cmap="Blues")
     plt.colorbar(im, fraction=0.046, pad=0.04)
 
-    plt.title("Logistic Regression Confusion Matrix")
+    plt.title(
+        f"Logistic Regression Confusion Matrix\n"
+        f"Accuracy = {classification_accuracy:.3f}"
+    )
     plt.xlabel("Predicted category")
     plt.ylabel("Actual category")
     plt.xticks(range(len(labels)), labels)
@@ -598,9 +658,7 @@ def run_regression_and_classification(df: pd.DataFrame) -> None:
     save_figure("12_classification_confusion_matrix.png")
 
 
-# ============================================================
 # MAIN FUNCTION
-# ============================================================
 
 def main() -> None:
     print("Starting FDA car price prediction project...")
